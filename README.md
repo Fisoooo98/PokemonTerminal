@@ -1,2 +1,2 @@
 # PokemonTerminal
-Jueguo de pokemon en una terminal 
+Juego de pokemon en una terminal 
