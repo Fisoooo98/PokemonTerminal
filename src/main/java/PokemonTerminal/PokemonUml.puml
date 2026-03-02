@@ -1,0 +1,325 @@
+@startuml
+' =========================
+' CONFIGURACIÓN VISUAL
+' =========================
+skinparam classAttributeIconSize 0
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam backgroundColor #1E1E1E
+skinparam classBackgroundColor #2A3A4A
+skinparam classBorderColor #64B5F6
+skinparam classBorderThickness 2
+skinparam classFontColor #FFFFFF
+skinparam classFontStyle bold
+skinparam classAttributeFontColor #E0E0E0
+skinparam classAttributeFontSize 11
+skinparam classHeaderBackgroundColor #0D47A1
+skinparam packageBackgroundColor #263238
+skinparam packageBorderColor #90A4AE
+skinparam packageBorderThickness 2
+skinparam packageFontColor #FFFFFF
+skinparam packageFontStyle bold
+skinparam enumBackgroundColor #2E3B4E
+skinparam enumBorderColor #FFD54F
+skinparam enumFontColor #FFD54F
+skinparam enumAttributeFontColor #FFB74D
+skinparam arrowColor #FFFFFF
+skinparam arrowThickness 2
+skinparam noteBackgroundColor #37474F
+skinparam noteFontColor #FFFFFF
+skinparam noteBorderColor #546E7A
+
+left to right direction
+' ============================================
+' ENTRENADOR
+' ============================================
+package "🧑‍🎓 Entrenadores" #263238 {
+    class Entrenador {
+        - PC       : List<Pokemon>
+        - equipo   : Pokemon[6]
+        - mochila  : List<Items>
+        --
+        + usarItem()
+        + cambiarPokemon()
+        + capturarPokemon(Pokemon salvaje)
+        + moverPokemonPCEquipo()
+        + moverPokemonEquipoPC()
+    }
+}
+
+
+' =========================
+' ENUMS
+' =========================
+package "🎨 Tipos" #263238 {
+    enum tipo {
+    AGUA, FUEGO, PLANTA
+     }
+    enum TipoDaño {
+    FISICO, ESPECIAL
+    }
+    enum MetodoAprendizaje {
+     NIVEL, MT
+     }
+    enum Ratiocaptura {
+     BAJO, MEDIO, ALTO
+     }
+    enum Naturaleza {
+       Audaz
+       Firme
+       Miedosa
+    }
+    enum EventoCombate {
+        ATAQUE_FISICO,
+        ATAQUE_ESPECIAL,
+        RECIBIR_DAÑO,
+        USAR_MOVIMIENTO_ESTADO,
+        PASAR_TURNO
+    }
+    enum TipoHuevo {
+        COMUN
+        RARO
+        EPICO
+        LEGENDARIO
+    }
+}
+
+' =========================
+' EFECTOS Y ESTADOS
+' =========================
+package "💀 Estados y Efectos" #263238 {
+
+    interface EstadoAlterado {
+        + aplicar(Pokemon objetivo)
+        + onEvento(evento: EventoCombate, Pokemon objetivo)
+        + estaActivo() : boolean
+    }
+
+    class Paralisis
+    class Quemadura
+    class Veneno
+
+    EstadoAlterado <|-- Paralisis
+    EstadoAlterado <|-- Quemadura
+    EstadoAlterado <|-- Veneno
+
+    interface EfectoSecundario {
+        + aplicar(Pokemon objetivo)
+    }
+
+    class EfectoConProbabilidad {
+        - probabilidad : double
+        - efecto : EstadoAlterado
+        + aplicar(Pokemon objetivo)
+    }
+
+    EfectoSecundario <|-- EfectoConProbabilidad
+}
+
+' =========================
+' MOVIMIENTOS
+' =========================
+package "📊 Sistema de Daño" {
+
+    class TablaTipos {
+        - efectividades : Map<Tipo, Map<Tipo, Double>>
+        + getMultiplicador(atacante: Tipo, defensor: Tipo) : double
+    }
+
+}
+package "⚡ Movimientos" #263238 {
+
+    abstract class Movimiento {
+        - nombre : String
+        - efectosSecundarios : List<EfectoSecundario>
+        - porcentajeAcierto : int
+        - PP                : int
+        - turnos             : int
+        + ejecutar(atacante: Pokemon, objetivo: Pokemon)
+        + agregarEfecto(efecto: EfectoSecundario)
+    }
+
+    class Ataque {
+        - danio : int
+        - tipo : tipo
+        - tipoDaño : TipoDaño
+    }
+
+    class MovimientoEstadoRival {
+        - debuffAtaq : int
+        - debuffDef : int
+        - debuffVel : int
+    }
+
+    Movimiento <|-- Ataque
+    Movimiento <|-- MovimientoEstadoRival
+}
+
+' =========================
+' ITEMS
+' =========================
+package "🛠 Items" #263238 {
+    abstract class Equipables {
+        + activar(pokemon: Pokemon, evento: EventoCombate)
+    }
+
+    abstract class Revivir {
+        -vida: int
+        +revivir(Pokemon pokemon)
+    }
+    abstract class Huevos {
+        -probabilidad : double
+        -tipo : TipoHuevo
+
+
+    }
+    abstract class PP {
+        -PP: int
+        +resaturarPP(Pokemon pokemon)
+    }
+    abstract class Consumibles {
+        - consumido : boolean
+        + activar(pokemon: Pokemon, evento: EventoCombate)
+    }
+
+    abstract class Permanentes {
+        + activar(pokemon: Pokemon, evento: EventoCombate)
+    }
+
+    abstract class Probabilidad {
+        - probabilidad : double
+        + activar(pokemon: Pokemon, evento: EventoCombate)
+    }
+
+
+    abstract class Items {
+        - nombre : String
+        - dinero : int
+        - cantidad : int
+    }
+
+    abstract class Curas {
+        - vida : int
+        + curar(Pokemon pokemon)
+    }
+
+    abstract class Pokeballs {
+        - Ratio : double
+        + capturar(Pokemon salvaje) : boolean
+    }
+
+    abstract class MT {
+        - movimiento : Movimiento
+        + aprenderMovimiento(Pokemon pokemon)
+    }
+
+    abstract class PiedraEvolutiva
+    abstract class MegaPiedra {
+        + activarMega(Pokemon pokemon)
+    }
+
+     Equipables <|-- Consumibles
+     Equipables <|-- Permanentes
+     Equipables <|-- Probabilidad
+
+     Consumibles <|-- BandaFocus
+     Permanentes <|-- CintaDestreza
+     Probabilidad <|-- GarraRapida
+
+
+    Items <|-- Curas
+    Items <|-- Pokeballs
+    Items <|-- Equipables
+    Items <|-- PiedraEvolutiva
+    Items <|-- MegaPiedra
+    Items <|-- PP
+    Items <|-- Revivir
+    Items <|-- Huevos
+}
+
+' =========================
+' EVOLUCIÓN
+' =========================
+package "🌱 Evolución" #263238 {
+
+    interface CondicionEvolucion {
+        + seCumple(Pokemon pokemon) : boolean
+    }
+
+    class EvolucionPorNivel {
+        - nivel : int
+    }
+
+    class EvolucionPorPiedra {
+        - tipoPiedra : Class
+    }
+
+    CondicionEvolucion <|-- EvolucionPorNivel
+    CondicionEvolucion <|-- EvolucionPorPiedra
+}
+
+' =========================
+' POKEMON
+' =========================
+package "🐱 Pokemon" #263238 {
+
+    abstract class Pokemon {
+
+        - nombre : String
+        - vida : int
+        - vidamax : int
+        - atq_fisico : int
+        - atq_especial : int
+        - velocidad : int
+        - def_fisica : int
+        - def_especial : int
+        - nivel : int
+        - xp : int
+
+        - primerTipo : tipo
+        - segundoTipo : tipo
+
+        -naturaleza : Naturaleza
+        -tierhuevo  : TipoHuevo
+
+        - capturable : boolean
+        - ratioCaptura : Ratiocaptura
+
+        - movimientos : Movimiento[4]
+        - movimientosAprendibles : Map<Movimiento, MetodoAprendizaje>
+
+        - itemEquipado : Equipables
+
+        - estadoActual : EstadoAlterado
+
+        - evolucionesPorNivel : Map<Integer, String>
+        - evolucionesPorPiedra : Map<Class<? extends PiedraEvolutiva>, String>
+
+        - formaMega : Pokemon
+        - megaActiva : boolean
+
+        --
+        + UsarMovimiento(slot: int, enemigo: Pokemon)
+        + AprenderMovimiento(slot: int, movimiento: Movimiento)
+        + EstaVivo() : boolean
+        + NotificarEvento(evento: EventoCombate)
+        + aplicarEstado(estado: EstadoAlterado)
+        + IntentarEvolucion(Items piedra = null)
+        + ActivarMega(MegaPiedra piedra)
+    }
+}
+
+' =========================
+' RELACIONES
+' =========================
+Pokemon -- Movimiento
+Pokemon --> Equipables
+Pokemon --> Huevos
+Pokemon --> EstadoAlterado
+Movimiento --> EfectoSecundario
+EfectoConProbabilidad --> EstadoAlterado
+Entrenador --> Pokemon : "captura"
+Entrenador -- Pokemon : "equipo"
+Entrenador -- Items : "mochila"
+
+@enduml
