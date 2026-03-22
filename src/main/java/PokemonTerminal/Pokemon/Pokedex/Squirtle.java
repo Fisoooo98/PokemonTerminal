@@ -22,7 +22,7 @@ public class Squirtle extends Pokemon {
     public Squirtle(int nivel, int xp) {
         super("Squirtle", Tipo.AGUA, null,
                 BASE_HP, BASE_ATK, BASE_DEF, BASE_ATK_ESP, BASE_DEF_ESP, BASE_VEL,
-                Naturaleza.AUDACIOSA, RatioCaptura.MEDIO, new Movimiento[4], true);
+                Naturaleza.AUDACIOSA, RatioCaptura.MEDIO, new Movimiento[4], true,null);
 
         // Inicializamos nivel y xp
         setNivel(nivel);

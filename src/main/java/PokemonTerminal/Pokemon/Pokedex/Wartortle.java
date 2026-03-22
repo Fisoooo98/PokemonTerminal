@@ -19,7 +19,7 @@ public class Wartortle extends Pokemon {
     public Wartortle(int nivel, int xp) {
         super("Wartortle", Tipo.AGUA, null,
                 BASE_HP, BASE_ATK, BASE_DEF, BASE_ATK_ESP, BASE_DEF_ESP, BASE_VEL,
-                Naturaleza.AUDACIOSA, RatioCaptura.MEDIO, new Movimiento[4], true);
+                Naturaleza.AUDACIOSA, RatioCaptura.MEDIO, new Movimiento[4], true,null);
 
         setNivel(nivel);
         setXp(xp);

@@ -18,7 +18,7 @@ public class Charmeleon extends Pokemon {
     public Charmeleon(int nivel, int xp) {
         super("Charmeleon", Tipo.FUEGO, null,
                 BASE_HP, BASE_ATK, BASE_DEF, BASE_ATK_ESP, BASE_DEF_ESP, BASE_VEL,
-                Naturaleza.AUDACIOSA, RatioCaptura.MEDIO, new Movimiento[4], true);
+                Naturaleza.AUDACIOSA, RatioCaptura.MEDIO, new Movimiento[4], true,null);
 
         setNivel(nivel);
         setXp(xp);

@@ -14,12 +14,14 @@ public class Paralisis implements EstadoAlterado {
 
     private boolean activo = true;
     private Random random = new Random();
+    private String nombre;
 
     @Override
     public void aplicar(Pokemon objetivo) {
         this.activo = true;
         // Reducir velocidad a la mitad
         objetivo.setVelocidad(objetivo.getVelocidad() / 2);
+        objetivo.aplicarEstado(this);
     }
 
     @Override
@@ -35,5 +37,8 @@ public class Paralisis implements EstadoAlterado {
     @Override
     public boolean estaActivo() {
         return activo;
+    }
+    public String getNombre() {
+        return nombre;
     }
 }

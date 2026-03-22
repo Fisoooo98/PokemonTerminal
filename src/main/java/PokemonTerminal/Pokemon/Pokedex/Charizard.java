@@ -17,7 +17,7 @@ public class Charizard extends Pokemon {
     public Charizard(int nivel, int xp) {
         super("Charizard", Tipo.FUEGO, Tipo.VOLADOR,
                 BASE_HP, BASE_ATK, BASE_DEF, BASE_ATK_ESP, BASE_DEF_ESP, BASE_VEL,
-                Naturaleza.AUDACIOSA, RatioCaptura.MEDIO, new Movimiento[4], true);
+                Naturaleza.AUDACIOSA, RatioCaptura.MEDIO, new Movimiento[4], true,null);
 
         setNivel(nivel);
         setXp(xp);

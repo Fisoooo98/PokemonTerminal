@@ -13,6 +13,9 @@ public enum Tipo {
     VOLADOR,
     VENENO,
     ELECTRICO,
+    PSIQUICO,
+    FANTASMA,
+    HADA,
     NONE
 }
 

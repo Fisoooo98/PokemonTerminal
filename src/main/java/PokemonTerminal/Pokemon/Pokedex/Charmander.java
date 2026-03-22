@@ -1,5 +1,7 @@
 package PokemonTerminal.Pokemon.Pokedex;
 
+import PokemonTerminal.Items.Evolutivos.ItemEvolutivo;
+import PokemonTerminal.Items.Evolutivos.PiedraFuego;
 import PokemonTerminal.Movimientos.Movimiento;
 import PokemonTerminal.Pokemon.Pokemon;
 import PokemonTerminal.Tipos.Naturaleza;
@@ -29,7 +31,7 @@ public class Charmander extends Pokemon {
     public Charmander(int nivel, int xp) {
         super("Charmander", Tipo.FUEGO, null,
                 BASE_HP, BASE_ATK, BASE_DEF, BASE_ATK_ESP, BASE_DEF_ESP, BASE_VEL,
-                Naturaleza.AUDACIOSA, RatioCaptura.MEDIO, new Movimiento[4], true);
+                Naturaleza.AUDACIOSA, RatioCaptura.MEDIO, new Movimiento[4], true,null);
 
         // Inicializamos nivel y xp
         setNivel(nivel);
@@ -40,7 +42,7 @@ public class Charmander extends Pokemon {
 
         // Evolución por nivel
         getEvoluciones().put(16, Charmeleon.class); // Evoluciona a Charmeleon nivel 16
-
+        getEvolucionesPorItem().put(PiedraFuego.class,Charmeleon.class);
         // Recalcular stats según nivel
         recalcularStats();
 
@@ -56,4 +58,8 @@ public class Charmander extends Pokemon {
     public Map<Integer, Class<? extends Pokemon>> getEvoluciones() {
         return super.Evoluciones;
     }
+    public Map<Class<? extends ItemEvolutivo>, Class<? extends Pokemon>> getEvolucionesPorItem() {
+        return super.EvolucionesPorItem;
+    }
+
 }

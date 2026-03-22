@@ -1,5 +1,8 @@
 package PokemonTerminal.Pokemon;
 
+import PokemonTerminal.Estados.Paralisis;
+import PokemonTerminal.Estados.Quemadura;
+import PokemonTerminal.Items.Evolutivos.ItemEvolutivo;
 import PokemonTerminal.Movimientos.Movimiento;
 import PokemonTerminal.Tipos.*;
 import PokemonTerminal.Estados.EstadoAlterado;
@@ -53,12 +56,12 @@ public abstract class Pokemon {
 
 
     // Estadísticas base de la especie (para recalcular)
-    private static int BASEHP;
-    private static int BASEATK;
-    private static int BASEDEF;
-    private static int BASE_ATKESP;
-    private static int BASEDEF_ESP;
-    private static int BASEVEL;
+    private final int BASEHP;
+    private final int BASEATK;
+    private final int BASEDEF;
+    private final int BASE_ATKESP;
+    private final int BASEDEF_ESP;
+    private final int BASEVEL;
 
     // ==============================
     // IVs
@@ -82,7 +85,7 @@ public abstract class Pokemon {
     private Map<Integer, Movimiento> MovimientosPorNivel;
     protected Map<Integer, Class<? extends Pokemon>> Evoluciones;
     private Map<String, MetodoAprendizaje> MovimientosAprendibles;
-    private Map<String, Class<? extends Pokemon>> EvolucionesPorPiedra;
+    protected Map<Class<? extends ItemEvolutivo>, Class<? extends Pokemon>> EvolucionesPorItem = new HashMap<>();
 
     // ==============================
     // Buffs/debuffs (niveles de combate)
@@ -102,7 +105,32 @@ public abstract class Pokemon {
     // Estado alterado actual
     // ==============================
     private EstadoAlterado estadoActual;
+    // ==============================
+    // Diseño
+    // ==============================
+    public static final String RESET = "\u001B[0m";
+    public static final String NEGRITA = "\u001B[1m";
+    public static final String SUBRAYADO = "\u001B[4m";
 
+
+    public static final String NEGRO = "\u001B[30m";
+    public static final String ROJO = "\u001B[31m";
+    public static final String VERDE = "\u001B[32m";
+    public static final String AMARILLO = "\u001B[33m";
+    public static final String AZUL = "\u001B[34m";
+    public static final String PURPURA = "\u001B[35m";
+    public static final String CIAN = "\u001B[36m";
+    public static final String BLANCO = "\u001B[37m";
+
+    // Colores de fondo (Background)
+    public static final String BG_NEGRO = "\u001B[40m";
+    public static final String BG_ROJO = "\u001B[41m";
+    public static final String BG_VERDE = "\u001B[42m";
+    public static final String BG_AMARILLO = "\u001B[43m";
+    public static final String BG_AZUL = "\u001B[44m";
+    public static final String BG_PURPURA = "\u001B[45m";
+    public static final String BG_CIAN = "\u001B[46m";
+    public static final String BG_BLANCO = "\u001B[47m";
     // ==============================
     // Constructor
     // ==============================
@@ -110,7 +138,7 @@ public abstract class Pokemon {
                    int baseHP, int baseAtk, int baseDef,
                    int baseAtkEsp, int baseDefEsp, int baseVel,
                    Naturaleza naturaleza, RatioCaptura ratioCaptura,
-                   Movimiento[] movimientos, boolean capturable) {
+                   Movimiento[] movimientos, boolean capturable , EstadoAlterado estadoActual) {
 
         this.nombre = nombre;
         this.primertipo = primertipo;
@@ -135,7 +163,8 @@ public abstract class Pokemon {
         this.atkEspecial = BASE_ATKESP;
         this.defEspecial = BASEDEF_ESP;
         this.velocidad = BASEVEL;
-
+        //Estado actual
+        this.estadoActual = estadoActual;
         // Movimientos iniciales
         this.movimientos = movimientos != null ? movimientos : new Movimiento[4];
 
@@ -151,7 +180,7 @@ public abstract class Pokemon {
         this.MovimientosPorNivel = new HashMap<>();
         this.MovimientosAprendibles = new HashMap<>();
         this.Evoluciones = new HashMap<>();
-        this.EvolucionesPorPiedra = new HashMap<>();
+        this.EvolucionesPorItem = new HashMap<>();
     }
     // ==============================
     // Métodos de combate
@@ -208,6 +237,11 @@ public abstract class Pokemon {
     public int getVelocidadCombate() {
         return (int) (velocidad * getMultiplicador(nivelVel));
     }
+
+    // ==============================
+    // Metodo atacar
+    // ==============================
+
 
     // ==============================
     // Métodos de progreso
@@ -338,14 +372,67 @@ public abstract class Pokemon {
         }
 
         // Si se proporcionó piedra evolutiva, comprobamos si coincide
-        if (piedraEvolutiva != null && EvolucionesPorPiedra.containsKey(piedraEvolutiva)) {
-            return EvolucionesPorPiedra.get(piedraEvolutiva);
+        if (piedraEvolutiva != null && EvolucionesPorItem.containsKey(piedraEvolutiva)) {
+            return EvolucionesPorItem.get(piedraEvolutiva);
         }
 
         // No puede evolucionar
         return null;
     }
+    // ==============================
+    // Evoluciones
+    // ==============================
+    /**
+     * Intenta evolucionar al Pokémon usando un ítem específico.
+     * @param item El objeto que se intenta usar.
+     * @return La nueva instancia del Pokémon si evolucionó, o el mismo si no.
+     */
+    public Pokemon usarItemEvolutivo(ItemEvolutivo item) {
+        Class<? extends Pokemon> claseEvolucion = EvolucionesPorItem.get(item.getClass());
 
+        if (claseEvolucion != null) {
+            System.out.println("¡" + this.getNombre() + " está reaccionando al ítem!");
+            // Aquí llamas al método que crea la nueva instancia (ej. ejecutarEvolucion que vimos antes)
+            return this.ejecutarEvolucion(claseEvolucion);
+        } else {
+            System.out.println("No parece que " + this.getNombre() + " pueda usar eso...");
+            return this;
+        }
+    }
+    public Pokemon ejecutarEvolucion(Class<? extends Pokemon> nuevaEspecie) {
+        try {
+            // 1. Instanciar la nueva especie (ej. Charmeleon) usando su constructor (nivel, xp)
+            Pokemon evolucion = nuevaEspecie
+                    .getDeclaredConstructor(int.class, int.class)
+                    .newInstance(this.getnivel(), this.getXp());
+
+            // 2. Transferir el "ADN" (IVs) para que no cambien tras evolucionar
+            evolucion.ivHp = this.ivHp;
+            evolucion.ivAtkFisico = this.ivAtkFisico;
+            evolucion.ivDefFisico = this.ivDefFisico;
+            evolucion.ivAtkEspecial = this.ivAtkEspecial;
+            evolucion.ivDefEspecial = this.ivDefEspecial;
+            evolucion.ivVelocidad = this.ivVelocidad;
+
+            // 3. Transferir los movimientos actuales que ya conocía
+            // Usamos el array interno directamente o un setter
+            for (int i = 0; i < 4; i++) {
+                if (this.movimientos[i] != null) {
+                    evolucion.setMovimiento(i + 1, this.movimientos[i]);
+                }
+            }
+
+            // 4. Recalcular los Stats con las BASES de la nueva especie y los IVs viejos
+            evolucion.recalcularStats();
+
+            System.out.println("¡Felicidades! Tu " + this.getNombre() + " ha evolucionado en " + evolucion.getNombre() + "!");
+            return evolucion;
+
+        } catch (Exception e) {
+            System.err.println("Error crítico en la evolución: " + e.getMessage());
+            return this; // Si algo falla (ej. no existe el constructor), devolvemos el original
+        }
+    }
     // ==============================
     // Métodos de estado alterado
     // ==============================
@@ -369,8 +456,22 @@ public abstract class Pokemon {
         this.estadoActual = null;
     }
 
-    public EstadoAlterado getEstadoActual() {
-        return estadoActual;
+    public String getEstadoActual() {
+
+        if (this.estadoActual == null) {
+            return "Ninguno";
+        }
+
+
+        if (this.estadoActual instanceof Paralisis) {
+            return "Paralisis";
+        }
+
+        if (this.estadoActual instanceof Quemadura) {
+            return "Quemado";
+        }
+
+        return "Otro Estado";
     }
 
     // ==============================
@@ -424,27 +525,27 @@ public abstract class Pokemon {
     public RatioCaptura getRatioCaptura() {
         return ratioCaptura;
     }
-    public static int getBaseAtkesp() {
+    public  int getBaseAtkesp() {
         return BASE_ATKESP;
     }
 
-    public static int getBASEATK() {
+    public  int getBASEATK() {
         return BASEATK;
     }
 
-    public static int getBASEDEF() {
+    public  int getBASEDEF() {
         return BASEDEF;
     }
 
-    public static int getBasedefEsp() {
+    public  int getBasedefEsp() {
         return BASEDEF_ESP;
     }
 
-    public static int getBASEVEL() {
+    public  int getBASEVEL() {
         return BASEVEL;
     }
 
-    public static int getBASEHP() {
+    public  int getBASEHP() {
         return BASEHP;
     }
     public boolean isCapturable() {
@@ -508,38 +609,86 @@ public abstract class Pokemon {
     public void setMovimientosPorNivel(Map<Integer, Movimiento> movimientosPorNivel) {
         MovimientosPorNivel = movimientosPorNivel;
     }
+
+    public static String getColorPorTipo(Tipo tipo) {
+        if (tipo == null) return "\u001B[37m"; // Blanco por defecto
+
+        return switch (tipo) {
+            case FUEGO -> "\u001B[31m";    // Rojo
+            case AGUA -> "\u001B[34m";     // Azul
+            case PLANTA -> "\u001B[32m";   // Verde
+            case ELECTRICO -> "\u001B[33m"; // Amarillo
+            case HIELO -> "\u001B[36m";    // Cian claro
+            case VENENO -> "\u001B[35m";   // Púrpura
+            case TIERRA -> "\u001B[33m";   // Marrón/Amarillo
+            case VOLADOR -> "\u001B[36m";  // Cian
+            case PSIQUICO -> "\u001B[35m"; // Rosa/Fucsia
+            case BICHO -> "\u001B[32m";    // Verde oliva
+            case ROCA -> "\u001B[30m";     // Gris oscuro (o usar Bold)
+            case FANTASMA -> "\u001B[35m"; // Violeta
+            case DRAGON -> "\u001B[34m";   // Azul oscuro
+            case ACERO -> "\u001B[37m";    // Gris plata
+            case HADA -> "\u001B[95m";     // Rosado
+            default -> "\u001B[37m";       // Blanco (Normal)
+        };
+    }
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("=== Pokémon ===\n");
-        sb.append("Nombre: ").append(nombre).append("\n");
-        sb.append("Nivel: ").append(nivel).append(" | XP: ").append(xp).append("\n");
-        sb.append("Tipo: ").append(primertipo);
-        if (segundotipo != null) sb.append("/").append(segundotipo);
-        sb.append("\n");
-        sb.append("Naturaleza: ").append(naturaleza).append("\n");
-        sb.append("Capturable: ").append(capturable).append(" | Ratio de captura: ").append(ratioCaptura).append("\n\n");
+        // --- PREPARACIÓN ---
+        double porcentajeHP = Math.max(0, Math.min(1, (double) hp / hpMax));
+        String colorHP = (porcentajeHP > 0.5) ? VERDE : (porcentajeHP > 0.2) ? AMARILLO : ROJO;
+        String txtEstado = (estadoActual == null) ? "SANO" : getEstadoActual().toUpperCase();
+        String colorEstado = (estadoActual == null) ? VERDE : ROJO;
+        String colorTipoP = getColorPorTipo(primertipo);
 
-        sb.append("--- Stats ---\n");
-        sb.append(String.format("HP: %d/%d (Base: %d | IV: %d)\n", hp, hpMax, BASEHP, ivHp));
-        sb.append(String.format("Atk Físico: %d (Base: %d | IV: %d)\n", atkFisico, BASEATK, ivAtkFisico));
-        sb.append(String.format("Def Físico: %d (Base: %d | IV: %d)\n", defFisico, BASEDEF, ivDefFisico));
-        sb.append(String.format("Atk Especial: %d (Base: %d | IV: %d)\n", atkEspecial, BASE_ATKESP, ivAtkEspecial));
-        sb.append(String.format("Def Especial: %d (Base: %d | IV: %d)\n", defEspecial, BASEDEF_ESP, ivDefEspecial));
-        sb.append(String.format("Velocidad: %d (Base: %d | IV: %d)\n\n", velocidad, BASEVEL, ivVelocidad));
+        // --- DISEÑO ABIERTO (SIN BORDES DERECHOS) ---
+        sb.append("╔").append("═".repeat(60)).append("\n");
 
-        sb.append("--- Movimientos ---\n");
-        for (int i = 0; i < movimientos.length; i++) {
+        // LÍNEA 1: Identidad
+        sb.append("║ ").append(NEGRITA).append(colorTipoP).append(nombre.toUpperCase()).append(RESET);
+        sb.append(String.format(" [Lv.%-3d] │ %sXP: %-10d%s │ Estado: %s%s%s\n",
+                nivel, CIAN, xp, RESET, colorEstado, txtEstado, RESET));
+
+        // LÍNEA 2: Tipos y Naturaleza
+        String tipos = primertipo + (segundotipo != null ? "/" + segundotipo : "");
+        sb.append(String.format("║ Tipo: %-18s │ Nat: %-15s\n", tipos, naturaleza));
+
+        sb.append("╠").append("═".repeat(60)).append("\n");
+
+        // LÍNEA 3: HP
+        int rellenoBarra = (int)(porcentajeHP * 10);
+        String barraInterior = colorHP + "█".repeat(rellenoBarra) + RESET + "░".repeat(10 - rellenoBarra);
+        sb.append("║ ").append(NEGRITA).append("HP  ").append(RESET).append(barraInterior);
+        sb.append(String.format(" %s[%d/%d]%s\n", colorHP, hp, hpMax, RESET));
+
+        // LÍNEA 4: Stats
+        sb.append("║ ");
+        sb.append(ROJO + "Atk:" + RESET + String.format(" %-3d │ ", atkFisico));
+        sb.append(AZUL + "Def:" + RESET + String.format(" %-3d │ ", defFisico));
+        sb.append(PURPURA + "SpA:" + RESET + String.format(" %-3d │ ", atkEspecial));
+        sb.append(CIAN + "SpD:" + RESET + String.format(" %-3d │ ", defEspecial));
+        sb.append(AMARILLO + "Vel:" + RESET + String.format(" %-3d\n", velocidad));
+
+        sb.append("╠").append("═".repeat(60)).append("\n");
+
+        // LÍNEA 5: Movimientos
+        sb.append("║ ").append(NEGRITA).append("MOVIMIENTOS:").append(RESET).append("\n");
+        sb.append("║ ");
+        for (int i = 0; i < 4; i++) {
             if (movimientos[i] != null) {
-                sb.append((i + 1)).append(": ").append(movimientos[i].getNombre()).append("\n");
+                String colorMov = getColorPorTipo(movimientos[i].getTipo());
+                sb.append(NEGRITA).append("[").append(i + 1).append("] ").append(RESET);
+                sb.append(colorMov).append(String.format("%-14s ", movimientos[i].getNombre())).append(RESET);
             } else {
-                sb.append((i + 1)).append(": [Vacío]\n");
+                sb.append(String.format("[%d] %-14s ", (i + 1), "----------"));
             }
         }
+        sb.append("\n");
 
-        sb.append("\n--- Estado Actual ---\n");
-        sb.append(estadoActual != null && estadoActual.estaActivo() ? estadoActual : "Ninguno").append("\n");
+        // Finalizamos con una línea sencilla para separar del siguiente Pokémon
+        sb.append("╚").append("═".repeat(60)).append("\n");
 
         return sb.toString();
     }

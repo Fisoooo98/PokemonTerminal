@@ -10,6 +10,8 @@ import java.util.Random;
 
 public abstract class Movimiento {
 
+
+
     protected String nombre;
     protected Tipo tipo;
     protected int potencia;
@@ -44,6 +46,9 @@ public abstract class Movimiento {
 
     public String getNombre() {
         return nombre;
+    }
+    public Tipo getTipo() {
+        return tipo;
     }
 }
 
