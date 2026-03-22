@@ -16,7 +16,7 @@ public class Lanzallamas extends Movimiento {
     public Lanzallamas() {
         super("Lanzallamas", Tipo.FUEGO, 90, 15, 100,new ArrayList<>());
         // 10% chance de quemar
-        agregarEfecto(new EfectoConProbabilidad(20, new Quemadura()));
+        agregarEfecto(new EfectoConProbabilidad(100, new Quemadura()));
     }
 
     @Override

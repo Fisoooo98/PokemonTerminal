@@ -636,59 +636,65 @@ public abstract class Pokemon {
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        // --- PREPARACIÓN ---
+        // --- 1. PREPARACIÓN DE DATOS ---
         double porcentajeHP = Math.max(0, Math.min(1, (double) hp / hpMax));
         String colorHP = (porcentajeHP > 0.5) ? VERDE : (porcentajeHP > 0.2) ? AMARILLO : ROJO;
-        String txtEstado = (estadoActual == null) ? "SANO" : getEstadoActual().toUpperCase();
         String colorEstado = (estadoActual == null) ? VERDE : ROJO;
         String colorTipoP = getColorPorTipo(primertipo);
+        String txtEstado = (estadoActual == null) ? "SANO" : getEstadoActual().toUpperCase();
 
-        // --- DISEÑO ABIERTO (SIN BORDES DERECHOS) ---
-        sb.append("╔").append("═".repeat(60)).append("\n");
+        // Iconos de apoyo
+        String iHP = "❤️ ", iAtk = "⚔️ ", iDef = "🛡️ ", iSpA = "🔮 ", iSpD = "🔰 ", iVel = "👟 ";
+        String iconoTipo = (primertipo == Tipo.FUEGO) ? "🔥 " : (primertipo == Tipo.AGUA) ? "💧 " : "🌀 ";
 
-        // LÍNEA 1: Identidad
-        sb.append("║ ").append(NEGRITA).append(colorTipoP).append(nombre.toUpperCase()).append(RESET);
-        sb.append(String.format(" [Lv.%-3d] │ %sXP: %-10d%s │ Estado: %s%s%s\n",
-                nivel, CIAN, xp, RESET, colorEstado, txtEstado, RESET));
+        // --- 2. CONSTRUCCIÓN VISUAL ---
 
-        // LÍNEA 2: Tipos y Naturaleza
-        String tipos = primertipo + (segundotipo != null ? "/" + segundotipo : "");
-        sb.append(String.format("║ Tipo: %-18s │ Nat: %-15s\n", tipos, naturaleza));
+        // Línea superior decorativa
+        sb.append(colorTipoP).append("------------------------------------------------------------").append(RESET).append("\n");
 
-        sb.append("╠").append("═".repeat(60)).append("\n");
+        // LÍNEA 1: Identidad (Sin fondo, solo texto y color)
+        sb.append("  ").append(NEGRITA).append(colorTipoP).append(nombre.toUpperCase()).append(RESET);
+        sb.append(String.format("  [Lv.%-3d]  │  %sXP: %-10d%s\n", nivel, CIAN, xp, RESET));
 
-        // LÍNEA 3: HP
-        int rellenoBarra = (int)(porcentajeHP * 10);
-        String barraInterior = colorHP + "█".repeat(rellenoBarra) + RESET + "░".repeat(10 - rellenoBarra);
-        sb.append("║ ").append(NEGRITA).append("HP  ").append(RESET).append(barraInterior);
-        sb.append(String.format(" %s[%d/%d]%s\n", colorHP, hp, hpMax, RESET));
+        // LÍNEA 2: Tipo y Estado
+        sb.append("  ").append(iconoTipo).append(colorTipoP).append(primertipo);
+        if (segundotipo != null) sb.append("/").append(segundotipo);
+        sb.append(RESET).append(String.format("  │  Nat: %-12s  │  Estado: %s%s%s\n", naturaleza, colorEstado, txtEstado, RESET));
 
-        // LÍNEA 4: Stats
-        sb.append("║ ");
-        sb.append(ROJO + "Atk:" + RESET + String.format(" %-3d │ ", atkFisico));
-        sb.append(AZUL + "Def:" + RESET + String.format(" %-3d │ ", defFisico));
-        sb.append(PURPURA + "SpA:" + RESET + String.format(" %-3d │ ", atkEspecial));
-        sb.append(CIAN + "SpD:" + RESET + String.format(" %-3d │ ", defEspecial));
-        sb.append(AMARILLO + "Vel:" + RESET + String.format(" %-3d\n", velocidad));
+        sb.append("  ").append("─".repeat(56)).append("\n");
 
-        sb.append("╠").append("═".repeat(60)).append("\n");
+        // LÍNEA 3: Salud (HP) con barra de textura
+        int rellenas = (int)(porcentajeHP * 10);
+        String barra = colorHP + "▓".repeat(rellenas) + RESET + "░".repeat(10 - rellenas);
+        sb.append("  ").append(iHP).append(NEGRITA).append("HP ").append(RESET).append("│ ").append(barra);
+        sb.append(String.format("  %s[%d/%d]%s\n", colorHP, hp, hpMax, RESET));
 
-        // LÍNEA 5: Movimientos
-        sb.append("║ ").append(NEGRITA).append("MOVIMIENTOS:").append(RESET).append("\n");
-        sb.append("║ ");
+        sb.append("  ").append("─".repeat(56)).append("\n");
+
+        // LÍNEA 4: Stats con Iconos
+        sb.append("  ").append(iAtk).append(ROJO).append("Atk:").append(RESET).append(String.format(" %-3d  ", atkFisico));
+        sb.append(iDef).append(AZUL).append("Def:").append(RESET).append(String.format(" %-3d  ", defFisico));
+        sb.append(iSpA).append(PURPURA).append("SpA:").append(RESET).append(String.format(" %-3d\n", atkEspecial));
+
+        sb.append("  ").append(iSpD).append(CIAN).append("SpD:").append(RESET).append(String.format(" %-3d  ", defEspecial));
+        sb.append(iVel).append(AMARILLO).append("Vel:").append(RESET).append(String.format(" %-3d\n", velocidad));
+
+        sb.append("  ").append("─".repeat(56)).append("\n");
+
+        // LÍNEA 5: Movimientos (Vertical con iconos)
+        sb.append("  ").append(NEGRITA).append("⚔️  MOVIMIENTOS:").append(RESET).append("\n");
         for (int i = 0; i < 4; i++) {
             if (movimientos[i] != null) {
                 String colorMov = getColorPorTipo(movimientos[i].getTipo());
-                sb.append(NEGRITA).append("[").append(i + 1).append("] ").append(RESET);
-                sb.append(colorMov).append(String.format("%-14s ", movimientos[i].getNombre())).append(RESET);
+                sb.append("   ").append(NEGRITA).append("[").append(i + 1).append("] ").append(RESET);
+                sb.append(colorMov).append(String.format("%-15s", movimientos[i].getNombre())).append(RESET).append("\n");
             } else {
-                sb.append(String.format("[%d] %-14s ", (i + 1), "----------"));
+                sb.append("   ").append(String.format("[%d] %-15s\n", (i + 1), "----------"));
             }
         }
-        sb.append("\n");
 
-        // Finalizamos con una línea sencilla para separar del siguiente Pokémon
-        sb.append("╚").append("═".repeat(60)).append("\n");
+        // Línea inferior decorativa
+        sb.append(colorTipoP).append("------------------------------------------------------------").append(RESET).append("\n");
 
         return sb.toString();
     }
