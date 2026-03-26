@@ -29,12 +29,15 @@ public class Squirtle extends Pokemon {
         setXp(xp);
 
         // Movimientos por nivel
-        getMovimientosPorNivel().put(1, new PistolaAgua()); // Ejemplo, puede añadir más
+        getMovimientosPorNivel().put(15, new PistolaAgua());
 
         // Evolución por nivel
         getEvoluciones().put(16, Wartortle.class); // Evoluciona a Wartortle nivel 16
 
-        // Recalcular stats según nivel
+        actualizarMemoria();
+
+        llenarSlotsAutomaticamente();
+
         recalcularStats();
     }
 

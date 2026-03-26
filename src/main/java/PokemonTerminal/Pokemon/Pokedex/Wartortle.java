@@ -28,6 +28,10 @@ public class Wartortle extends Pokemon {
 
         getEvoluciones().put(36, Blastoise.class);
 
+        actualizarMemoria();
+
+        llenarSlotsAutomaticamente();
+
         recalcularStats();
     }
 

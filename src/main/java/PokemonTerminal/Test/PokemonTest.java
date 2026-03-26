@@ -3,7 +3,9 @@ package PokemonTerminal.Test;
 import PokemonTerminal.Estados.EstadoAlterado;
 import PokemonTerminal.Estados.Paralisis;
 import PokemonTerminal.Items.Evolutivos.PiedraFuego;
+import PokemonTerminal.Items.MT.MT;
 import PokemonTerminal.Movimientos.Especiales.Lanzallamas;
+import PokemonTerminal.Movimientos.Especiales.Rayo;
 import PokemonTerminal.Pokemon.*;
 import PokemonTerminal.Pokemon.Pokedex.*;
 import PokemonTerminal.Pokemon.Pokedex.Wartortle;
@@ -16,16 +18,17 @@ public class PokemonTest {
         PiedraFuego piedraFuego = new PiedraFuego();
         Paralisis paralisis = new Paralisis();
         Lanzallamas lanzallamas = new Lanzallamas();
-
+        Rayo rayo = new Rayo();
+        MT mtRayo = new MT(2000, "MT24 - Rayo", new Rayo());
         // Creamos Charmander nivel 5
         Charmander c = new Charmander(5, 0);
-        Blastoise b = new Blastoise(5, 0);
-
+        Squirtle s = new Squirtle(5, 0);
         // Le damos XP suficiente para llegar a nivel 35 y evolucionar
         Pokemon charmander = c.ganarXP(400000);
-        Pokemon blastoise = b.ganarXP(600000);
-        lanzallamas.ejecutar(charmander,blastoise);
-
+        Pokemon blastoise = s.ganarXP(600000);
+        mtRayo.usar(charmander,2);
+        //Charizard le hace un rayo a blastoise
+        rayo.ejecutar(charmander,blastoise);
         System.out.println(charmander.toString());
         System.out.println(blastoise.toString());
     }

@@ -1,4 +1,5 @@
 package PokemonTerminal.Pokemon.Pokedex;
+import PokemonTerminal.Movimientos.Especiales.Rayo;
 import PokemonTerminal.Movimientos.Movimiento;
 import PokemonTerminal.Movimientos.Especiales.Lanzallamas;
 import PokemonTerminal.Pokemon.Pokemon;
@@ -25,9 +26,14 @@ public class Charmeleon extends Pokemon {
 
         // Movimientos por nivel
         getMovimientosPorNivel().put(1, new Lanzallamas());
+        this.añadirMTCompatible(Rayo.class);
 
         // Evolución por nivel
         getEvoluciones().put(36, Charizard.class);
+
+        actualizarMemoria();
+
+        llenarSlotsAutomaticamente();
 
         recalcularStats();
     }

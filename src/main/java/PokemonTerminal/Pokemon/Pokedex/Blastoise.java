@@ -25,6 +25,10 @@ public class Blastoise extends Pokemon {
 
         getMovimientosPorNivel().put(1, new PistolaAgua());
 
+        actualizarMemoria();
+
+        llenarSlotsAutomaticamente();
+
         recalcularStats();
     }
 }

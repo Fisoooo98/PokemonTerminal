@@ -2,6 +2,7 @@ package PokemonTerminal.Pokemon.Pokedex;
 
 import PokemonTerminal.Items.Evolutivos.ItemEvolutivo;
 import PokemonTerminal.Items.Evolutivos.PiedraFuego;
+import PokemonTerminal.Movimientos.Especiales.Rayo;
 import PokemonTerminal.Movimientos.Movimiento;
 import PokemonTerminal.Pokemon.Pokemon;
 import PokemonTerminal.Tipos.Naturaleza;
@@ -39,19 +40,18 @@ public class Charmander extends Pokemon {
 
         // Movimientos por nivel
         getMovimientosPorNivel().put(7, new Lanzallamas()); // Ejemplo, puede añadir más
+        this.añadirMTCompatible(Rayo.class);
 
         // Evolución por nivel
         getEvoluciones().put(16, Charmeleon.class); // Evoluciona a Charmeleon nivel 16
         getEvolucionesPorItem().put(PiedraFuego.class,Charmeleon.class);
-        // Recalcular stats según nivel
+
+        actualizarMemoria();
+
+        llenarSlotsAutomaticamente();
+
         recalcularStats();
 
-        for (int lvl = 1; lvl <= nivel; lvl++) {
-            Movimiento mov = getMovimientosPorNivel().get(lvl);
-            if (mov != null) {
-                comprobarAprendizaje(mov, 0); // slot 0 = primer hueco libre
-            }
-        }
     }
 
     // Getter para la mapa Evoluciones

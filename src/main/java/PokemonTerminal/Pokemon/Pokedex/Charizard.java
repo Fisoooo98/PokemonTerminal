@@ -1,5 +1,6 @@
 package PokemonTerminal.Pokemon.Pokedex;
 
+import PokemonTerminal.Movimientos.Especiales.Rayo;
 import PokemonTerminal.Movimientos.Movimiento;
 import PokemonTerminal.Movimientos.Especiales.Lanzallamas;
 import PokemonTerminal.Pokemon.Pokemon;
@@ -23,6 +24,11 @@ public class Charizard extends Pokemon {
         setXp(xp);
 
         getMovimientosPorNivel().put(1, new Lanzallamas());
+        this.añadirMTCompatible(Rayo.class);
+
+        actualizarMemoria();
+
+        llenarSlotsAutomaticamente();
 
         recalcularStats();
     }

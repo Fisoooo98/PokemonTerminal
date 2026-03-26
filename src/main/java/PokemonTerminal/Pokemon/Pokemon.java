@@ -7,10 +7,7 @@ import PokemonTerminal.Movimientos.Movimiento;
 import PokemonTerminal.Tipos.*;
 import PokemonTerminal.Estados.EstadoAlterado;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Clase abstracta que representa la base de un Pokémon en el sistema de combate.
@@ -86,6 +83,8 @@ public abstract class Pokemon {
     protected Map<Integer, Class<? extends Pokemon>> Evoluciones;
     private Map<String, MetodoAprendizaje> MovimientosAprendibles;
     protected Map<Class<? extends ItemEvolutivo>, Class<? extends Pokemon>> EvolucionesPorItem = new HashMap<>();
+    protected Set<Class<? extends Movimiento>> mtCompatibles = new HashSet<>();
+    private Set<Movimiento> movimientosConocidos = new HashSet<>();
 
     // ==============================
     // Buffs/debuffs (niveles de combate)
@@ -99,7 +98,7 @@ public abstract class Pokemon {
     // ==============================
     // Movimientos
     // ==============================
-    private Movimiento[] movimientos = new Movimiento[4];
+    private Movimiento[] movimientos;
 
     // ==============================
     // Estado alterado actual
@@ -181,17 +180,19 @@ public abstract class Pokemon {
         this.MovimientosAprendibles = new HashMap<>();
         this.Evoluciones = new HashMap<>();
         this.EvolucionesPorItem = new HashMap<>();
-    }
-    // ==============================
-    // Métodos de combate
-    // ==============================
+        this.movimientosConocidos = new HashSet<>();
 
-    /**
-     * Devuelve un movimiento en un slot determinado (1-4).
-     *
-     * @param slot Slot del movimiento
-     * @return Movimiento si existe, null si no
-     */
+        // Al final del constructor, después de inicializar movimientosConocidos
+        if (this.movimientos != null) {
+            for (Movimiento m : this.movimientos) {
+                if (m != null) this.movimientosConocidos.add(m);
+            }
+        }
+    }
+
+    // ==============================
+    // Movimientos
+    // ==============================
 
     public Movimiento escogerMovimiento(int slot) {
         if (slot < 1 || slot > 4) return null;
@@ -199,7 +200,112 @@ public abstract class Pokemon {
     }
 
     public void setMovimiento(int slot, Movimiento movimiento) {
-        this.movimientos[slot - 1] = movimiento;
+        this.aprenderMovimiento(movimiento,slot);
+    }
+    /**
+     * Intenta aprender un movimiento. Si hay hueco, lo aprende.
+     * Si no, lo guarda en la "memoria" para aprenderlo luego.
+     */
+    public boolean aprenderMovimiento(Movimiento nuevo, int slot) {
+        if (nuevo == null) return false;
+
+        // 1. Siempre al baúl de recuerdos (CEREBRO)
+        this.movimientosConocidos.add(nuevo);
+
+        // 2. EQUIPAR (MANO)
+        // Si slot es 0, busca el primer hueco vacío (útil al subir de nivel)
+        if (slot == 0) {
+            for (int i = 0; i < 4; i++) {
+                if (this.movimientos[i] == null) {
+                    this.movimientos[i] = nuevo;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Si se especifica un slot (1-4), sobreescribimos el índice (0-3)
+        if (slot >= 1 && slot <= 4) {
+            this.movimientos[slot - 1] = nuevo;
+            return true;
+        }
+
+        return false;
+    }
+    /**
+     * Intercambia un movimiento del equipo por uno de la memoria.
+     * @param slot Slot del equipo (1-4).
+     * @param movRecordar El movimiento de la lista de conocidos.
+     */
+    public void recordarMovimiento(int slot, Movimiento movRecordar) {
+        if (slot < 1 || slot > 4 || !movimientosConocidos.contains(movRecordar)) return;
+
+        // Guardamos el que vamos a olvidar en la memoria (por si acaso no estaba)
+        if (movimientos[slot - 1] != null) {
+            movimientosConocidos.add(movimientos[slot - 1]);
+        }
+
+        // Ponemos el nuevo
+        movimientos[slot - 1] = movRecordar;
+    }
+
+    public void mostrarMovimientosConocidos() {
+        System.out.println("\n--- Movimientos disponibles para " + nombre + " ---");
+        int i = 1;
+        for (Movimiento m : movimientosConocidos) {
+            System.out.println("[" + i + "] " + m.getNombre() + " (Tipo: " + m.getTipo() + ")");
+            i++;
+        }
+    }
+
+    public void llenarSlotsAutomaticamente() {
+        // Limpiamos los slots actuales para no duplicar
+        for (int i = 0; i < 4; i++) movimientos[i] = null;
+
+        // Buscamos los movimientos de mayor nivel hacia abajo
+        int slotsOcupados = 0;
+        for (int lvl = this.nivel; lvl >= 1 && slotsOcupados < 4; lvl--) {
+            Movimiento mov = MovimientosPorNivel.get(lvl);
+            if (mov != null) {
+                movimientos[slotsOcupados] = mov;
+                slotsOcupados++;
+            }
+        }
+    }
+    /**
+     * Revisa el mapa de movimientos por nivel y añade a 'conocidos'
+     * todos los que el Pokémon ya debería saber por su nivel actual.
+     */
+    public void actualizarMemoria() {
+        for (Map.Entry<Integer, Movimiento> entrada : MovimientosPorNivel.entrySet()) {
+            if (this.nivel >= entrada.getKey()) {
+                // Solo lo añadimos a la memoria, no a los slots de combate aún
+                this.movimientosConocidos.add(entrada.getValue());
+            }
+        }
+    }
+
+    /**
+     * Añade un movimiento a la lista de compatibles por MT para este Pokémon.
+     * Se usa normalmente en el constructor de las especies específicas.
+     * @param claseMov La clase del movimiento (ej. RayoHielo.class).
+     */
+    protected void añadirMTCompatible(Class<? extends Movimiento> claseMov) {
+        this.mtCompatibles.add(claseMov);
+    }
+    /**
+     * Verifica si un movimiento es compatible con el Pokémon, ya sea porque
+     * lo aprende por nivel o porque está en su lista de MT compatibles.
+     * * @param mov El movimiento a comprobar.
+     * @return {@code true} si puede aprenderlo, {@code false} en caso contrario.
+     */
+    public boolean puedeAprender(Movimiento mov) {
+        // 1. Comprobamos si está en su mapa de movimientos por nivel
+        if (getMovimientosPorNivel().containsValue(mov)) {
+            return true;
+        }
+        // 2. Comprobamos si su clase está en el Set de MT compatibles
+        return mtCompatibles.contains(mov.getClass());
     }
 
     /**
@@ -253,7 +359,7 @@ public abstract class Pokemon {
         // Aprender movimientos correspondientes al nuevo nivel
         Movimiento nuevoMov = MovimientosPorNivel.get(nivel);
         if (nuevoMov != null) {
-            comprobarAprendizaje(nuevoMov, 0); // slot 0 = busca espacio libre
+            aprenderMovimiento(nuevoMov, 0); // slot 0 = busca espacio libre
         }
 
         // Comprobar evolución por nivel
@@ -282,34 +388,8 @@ public abstract class Pokemon {
         return nivel * nivel * nivel;
     }
 
-    /**
-     * Intenta que el Pokémon aprenda un nuevo movimiento.
-     *
-     * @param nuevoMovimiento Movimiento que se quiere aprender.
-     * @param slotElegido     Si el Pokémon ya tiene 4 movimientos, el slot (1-4) que reemplazará.
-     *                        Si es 0, se usará el primer espacio libre.
-     * @return true si el movimiento se aprende, false si no se puede (slot inválido).
-     */
-    public boolean comprobarAprendizaje(Movimiento nuevoMovimiento, int slotElegido) {
-        // Slot 0 = buscar primer espacio libre
-        if (slotElegido == 0) {
-            for (int i = 0; i < movimientos.length; i++) {
-                if (movimientos[i] == null) {
-                    movimientos[i] = nuevoMovimiento;
-                    return true;
-                }
-            }
-            return false; // No hay espacio
-        }
 
-        // Slot específico (1-4)
-        if (slotElegido >= 1 && slotElegido <= 4) {
-            movimientos[slotElegido - 1] = nuevoMovimiento;
-            return true;
-        }
 
-        return false; // Slot inválido
-    }
 
     public boolean conoceMovimiento(Movimiento movimiento) {
         for (Movimiento mov : movimientos) {
@@ -415,12 +495,7 @@ public abstract class Pokemon {
             evolucion.ivVelocidad = this.ivVelocidad;
 
             // 3. Transferir los movimientos actuales que ya conocía
-            // Usamos el array interno directamente o un setter
-            for (int i = 0; i < 4; i++) {
-                if (this.movimientos[i] != null) {
-                    evolucion.setMovimiento(i + 1, this.movimientos[i]);
-                }
-            }
+            evolucion.getMovimientosConocidos().addAll(this.movimientosConocidos);
 
             // 4. Recalcular los Stats con las BASES de la nueva especie y los IVs viejos
             evolucion.recalcularStats();
@@ -553,9 +628,10 @@ public abstract class Pokemon {
     }
 
     public Movimiento[] getMovimientos() {
-        return Arrays.stream(movimientos)       // Convertimos el array a stream
-                .filter(Objects::nonNull)  // Filtramos los que no son null
-                .toArray(Movimiento[]::new); // Devolvemos un array solo con movimientos válidos
+        return this.movimientos;
+    }
+    public Set<Movimiento> getMovimientosConocidos() {
+        return movimientosConocidos;
     }
 
     public int getnivel() {
@@ -566,10 +642,12 @@ public abstract class Pokemon {
         return xp;
     }
 
-    public void setHp(int hp) {
-        this.hp = Math.min(hp, hpMax);
-    }
 
+    public void setHp(int hp) {
+        // Math.max(0, ...) impide que la vida sea negativa.
+        // Math.min(..., hpMax) impide que la vida supere el máximo.
+        this.hp = Math.max(0, Math.min(hp, hpMax));
+    }
     public void setAtkFisico(int atkFisico) {
         this.atkFisico = atkFisico;
     }
@@ -697,5 +775,79 @@ public abstract class Pokemon {
         sb.append(colorTipoP).append("------------------------------------------------------------").append(RESET).append("\n");
 
         return sb.toString();
+    }
+    public void interfazGestionMovimientos() {
+        Scanner sc = new Scanner(System.in);
+
+        while (true) {
+            // --- CABECERA ---
+            System.out.println("\n" + BG_CIAN + NEGRO + NEGRITA + " ".repeat(18) + " ADMINISTRADOR DE MOVIMIENTOS " + " ".repeat(18) + RESET);
+            System.out.println(CIAN + "╔" + "═".repeat(60) + "╗" + RESET);
+            System.out.println(CIAN + "║" + RESET + "  USUARIO: " + NEGRITA + nombre.toUpperCase() + RESET + " ".repeat(28 - nombre.length()) + " LV: " + nivel + "    " + CIAN + "║" + RESET);
+            System.out.println(CIAN + "╚" + "═".repeat(60) + "╝" + RESET);
+
+            // --- CUERPO ---
+            System.out.println(NEGRITA + AZUL + "  [ EQUIPO DE COMBATE ]" + " ".repeat(17) + VERDE + "[ REGISTRO HISTÓRICO ]" + RESET);
+
+            List<Movimiento> baul = new ArrayList<>(movimientosConocidos);
+            int maxFilas = Math.max(4, baul.size());
+
+            for (int i = 0; i < maxFilas; i++) {
+                StringBuilder fila = new StringBuilder("  ");
+
+                if (i < 4) {
+                    String nombreM = (movimientos[i] != null) ? movimientos[i].getNombre() : "----------";
+                    String colorM = (movimientos[i] != null) ? getColorPorTipo(movimientos[i].getTipo()) : BLANCO;
+                    fila.append(AZUL + (i + 1) + " » " + RESET + colorM + String.format("%-18s", nombreM) + RESET);
+                } else {
+                    fila.append(" ".repeat(23));
+                }
+
+                fila.append(" ".repeat(6));
+
+                if (i < baul.size()) {
+                    Movimiento mb = baul.get(i);
+                    fila.append(VERDE + "(" + (i + 1) + ") " + RESET + getColorPorTipo(mb.getTipo()) + String.format("%-18s", mb.getNombre()) + RESET);
+                }
+                System.out.println(fila.toString());
+            }
+
+            System.out.println(CIAN + "─".repeat(62) + RESET);
+            System.out.println(NEGRITA + " ACCIÓN: " + RESET + "[Nº Baúl] [Slot Destino] | " + AMARILLO + "0 para salir" + RESET);
+            System.out.print(CIAN + " > " + RESET);
+
+            try {
+                int indexBaul = sc.nextInt();
+                if (indexBaul == 0) break;
+                int slotDestino = sc.nextInt();
+
+                if (indexBaul < 1 || indexBaul > baul.size() || slotDestino < 1 || slotDestino > 4) {
+                    System.out.println(BG_ROJO + BLANCO + " ERROR: POSICIÓN INVÁLIDA " + RESET);
+                    continue;
+                }
+
+                Movimiento movElegido = baul.get(indexBaul - 1);
+                int indiceDestino = slotDestino - 1;
+
+                // --- LÓGICA DE SUSTITUCIÓN LIMPIA ---
+
+                // 1. Si el movimiento ya está en otro slot, lo borramos de esa posición antigua
+                for (int i = 0; i < 4; i++) {
+                    if (movimientos[i] != null && movimientos[i].equals(movElegido)) {
+                        movimientos[i] = null;
+                    }
+                }
+
+                // 2. Colocamos el movimiento en el slot deseado (esto sustituye automáticamente lo que hubiera allí)
+                movimientos[indiceDestino] = movElegido;
+
+                System.out.println(BG_VERDE + NEGRO + " ✔ " + movElegido.getNombre().toUpperCase() + " ASIGNADO AL SLOT " + slotDestino + " " + RESET);
+                Thread.sleep(600);
+
+            } catch (Exception e) {
+                System.out.println(ROJO + "Entrada inválida." + RESET);
+                sc.nextLine();
+            }
+        }
     }
 }
